@@ -17,7 +17,8 @@ c_light = 2.99792458e10 #cm/s
 a = 4*sigma_boltz/c # gs⁻³K⁻⁴ / (cm/s) = g cm⁻¹ s⁻² K⁻⁴, aT⁴/rho = g cm⁻¹ s⁻² K⁻⁴K⁴cm³g⁻¹ = cm² s⁻²
 AU = 1.496e+13
 mp = 1.6605402e-24 #g
-
+h = 6.626e-27  #erg s
+ħ = 1.054e-27  #erg s
 
 #SANA/IMF PROB DISTRs.
 alpha_p = -0.55
@@ -175,7 +176,8 @@ function read_table(filename)
 end 
 
 
-function evolutionary_checkpoints(model, ix_end; from_ZAMS=true)
+function evolutionary_checkpoints(model, ix_end; from_ZAMS=true, 
+                                ini_burn_thersh = 0.99, end_burn_thresh = 0.01, end_burn_thresh_2= 1e-4 )
         h1  = model.center_h1
         he4 = model.center_he4
         c12 = model.center_c12
@@ -192,9 +194,9 @@ function evolutionary_checkpoints(model, ix_end; from_ZAMS=true)
         he4_endHburn = -1
         c12_endHeburn = -1
 
-        end_burn_thresh = 1e-2 
-        end_burn_thresh_2 = 1e-4
-        ini_burn_thersh = 0.99
+        # end_burn_thresh = 1e-2 
+        # end_burn_thresh_2 = 1e-4
+        # ini_burn_thersh = 0.99
 
         for j in range(1, ix_end)
                 if from_ZAMS

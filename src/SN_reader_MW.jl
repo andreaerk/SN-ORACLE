@@ -577,8 +577,8 @@ function do_SN_popsynth(;
     f_S(x) = 1-f_B(x)
 
     integral_logP, _ = quadgk(logp -> SANA_logP_pdf(logp, pow_p), minimum(logPs)-delta, maximum(logPs)+delta, rtol=1e-8)
-    integral_q, _    = quadgk(q    -> SANA_q_pdf(q, pow_q),    0.10-delta, 0.95+delta, rtol=1e-9)
-    integral_logM, _ = integrate_logM( 0.70-delta, 2.00+delta,  pow_m)
+    integral_q, _    = quadgk(q    -> SANA_q_pdf(q, pow_q),    minimum(qs)-delta, maximum(qs)+delta, rtol=1e-9)
+    integral_logM, _ = integrate_logM(minimum(logMs)-delta, maximum(logMs)+delta,  pow_m)
 
     function block_logP_pdf(logP)
         integral_block, _ = quadgk(x -> SANA_logP_pdf(x, pow_p), logP-delta, logP+delta, rtol=1e-8)
@@ -644,11 +644,11 @@ function do_SN_popsynth(;
 
     #sdelta=0.020/2
     sdelta = 0.0001
-    for logm in 0.70-delta:sdelta:2.00+delta
+    for logm in minimum(logMs)-delta:sdelta:maximum(logMs)+delta
         logm_t = @sprintf("%.5f", logm)
         m = 10 ^ logm
-        logm_min = max(0.70-delta, logm-sdelta/2)
-        logm_max = min(2.00+delta, logm+sdelta/2)
+        logm_min = max(minimum(logMs)-delta, logm-sdelta/2)
+        logm_max = min(maximum(logMs)+delta, logm+sdelta/2)
 
         sn=Dict(:WD =>0., :IIP =>0., :IIb =>0., :SN87A=>0., 
         :Ibc=>0., :BH =>0., :IIn =>0., :Ibn =>0., :X=>0.)
@@ -923,7 +923,8 @@ function do_SN_popsynth(;
                                             EXP_CRIT = EXP_CRIT,
                                             pow_m = pow_m,
                                             total_SNe  =  total_SNe,
-                                            only_SN = only_SN)
+                                            only_SN = only_SN,
+                                            logMs = logMs)
 
 
     return MODELS, SN_DATA, BH_binaries, total_SNe
@@ -938,7 +939,8 @@ function reorganize_SN_data(;   file = nothing,
                                 EXP_CRIT  = nothing, 
                                 pow_m     = nothing, 
                                 total_SNe = nothing,
-                                only_SN   = false)
+                                only_SN   = false,
+                                logMs = 0.07:0.05:2.00)
 
 
     for model in keys(MODELS)
@@ -961,20 +963,19 @@ function reorganize_SN_data(;   file = nothing,
 
     f_S = 1-f_B
     delta =0.050/2
-    sdelta = 0.020/2
-    integral_logM, _ = integrate_logM( 0.70-delta, 2.00+delta, pow_m )
+    integral_logM, _ = integrate_logM( minimum(logMs)-delta, maximum(logMs)+delta, pow_m )
     dump = 0
 
     sdelta = 0.0001
     SINGLES = SortedDict()
-    for logm in 0.70-delta:sdelta:2.00+delta
+    for logm in minimum(logMs)-delta:sdelta:maximum(logMs)+delta
         f_S <= 0 && continue
         logm_t = @sprintf("%.5f", logm)
         SINGLES[logm_t] = Dict()
 
         m = 10 ^ logm
-        logm_min = max(0.70-delta, logm-sdelta/2)
-        logm_max = min(2.00+delta, logm+sdelta/2)
+        logm_min = max(minimum(logMs)-delta, logm-sdelta/2)
+        logm_max = min(maximum(logMs)+delta, logm+sdelta/2)
         pdf = integrate_logM(logm_min, logm_max, pow_m)[1] / integral_logM * f_S 
 
         SINGLES[logm_t] = Dict()
@@ -1009,6 +1010,7 @@ function reorganize_SN_data(;   file = nothing,
         SINGLES[logm_t]["1_whichstar"]  = "S"
         SINGLES[logm_t]["pre_SN_orbit"] = (a=NaN, v1=NaN, v2=NaN)
         SINGLES[logm_t]["1st_kick"] = Float32[NaN]
+        SINGLES[logm_t]["1st_kick_whole"] = [(NaN,NaN,NaN)]
 
 
     end

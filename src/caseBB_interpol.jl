@@ -101,3 +101,79 @@ function retrieve_timepreC(M_convHe, Rl; debug=false)
         return zPi, false
     end
 end
+
+using PythonCall 
+using CondaPkg
+using Printf
+pythondir = "/vol/aibn133/data1/aercolino/SOFTWARE/SN_from_grids/PythonScripts/"
+PythonCall.pyimport("sys").path.insert(0, pythondir)
+# Import your custom Python script
+const interp = pyimport("caseBB_interpolator")
+function retrieve_tpreCC_python(m, r)
+    try 
+        return pyconvert(Float64, interp.retrieve_timepreC(m, r)[0])
+    catch 
+        return 0
+    end
+end
+print("done\n")
+
+for m in 1:.1:2
+    for logr in 0:0.5:3
+        r=10^logr
+        tP = nothing  
+        try 
+            tP = retrieve_tpreCC_python(m,r)
+        catch 
+            continue 
+        end
+        tN = retrieve_timepreC(m, r)[1]
+        rel_diff = (tN-tP)/tP
+        @printf("M = %3.1f, R = %5.2e    |||    Python: %5.3e  -  new %5.3e   diff = %.1f%%\n", m, r, tN, tP, rel_diff*100)
+    end
+end
+
+
+using CairoMakie
+using ColorSchemes
+
+
+# Define grid
+M_vals = 1.:0.05:2.75
+R_vals =  (0:0.05:3)
+cmap =  reverse(Makie.ColorSchemes.jet)
+anchors =  [0,       500,    1e3,    2e3,     5e3,      10e3,   20e3] ./ 20e3
+colors =   [:darkgray, :gray, :orange, :red,  :yellow,   :green,  :blue]
+# Placeholder: call your Python function here, or load precomputed results
+cmap = cgrad(colors, anchors)
+# Evaluate on grid
+py_results = [(retrieve_tpreCC_python(M, 10^R)) for R in R_vals, M in M_vals]
+jl_results = [(retrieve_timepreC(M, 10^R)[1]) for R in R_vals, M in M_vals]  # Assuming returns (value, bool)
+difference = (jl_results .- py_results) ./py_results
+
+# Plotting
+fig = Figure(resolution=(700, 1000))
+ax1 = Axis(fig[1, 1], title="Python results", xlabel="M_convHe", ylabel="Rl")
+hm = heatmap!(ax1, M_vals, R_vals, py_results, colormap=cmap,  highclip=:black)
+Colorbar(fig[1, 2], hm, label="Time [yr]", scale = log10, )
+
+ax2 = Axis(fig[2, 1], title="Julia results", xlabel="M_convHe", ylabel="Rl", )
+hm2 = heatmap!(ax2, M_vals, R_vals, jl_results, colormap=cmap, interpolate=false)
+Colorbar(fig[2, 2], hm2, label="Time [yr]")
+
+ax3 = Axis(fig[3, 1], title="Difference (Python - Julia)", xlabel="M_convHe", ylabel="Rl")
+hm3 = heatmap!(ax3, M_vals, R_vals, difference, colormap=:balance, colorrange=(-1, 1))
+cb = Colorbar(fig[3, 2], hm3, label="Time difference [yr]")
+for ax in [ax1,ax2, ax3] 
+    lines!(ax, Mc, log10.(R_20kyr), color=:blue)
+    lines!(ax, Mc, log10.(R_10kyr), color=:green)
+    lines!(ax, Mc, log10.(R_5kyr),  color=:yellow)
+    lines!(ax, Mc, log10.(R_2kyr),  color=:brown)
+    lines!(ax, Mc, log10.(R_1kyr),  color=:red)
+    lines!(ax, Mc, log10.(R_1yr),   color=:gray)
+    lines!(ax, Mc, log10.(R_max),   color=:black)
+    lines!(ax, Mc, log10.(500) .+ 0 .* Mc,   color=:black)
+end
+
+fig
+

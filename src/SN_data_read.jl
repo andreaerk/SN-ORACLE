@@ -27,6 +27,11 @@ function remove_values_and_linked(vals_to_remove, arr, arrays...)
     indices_to_remove = findall(x -> x in Set(vals_to_remove), arr)
     return ( [a[i] for i in eachindex(arr) if !(i in indices_to_remove)] for a in (arr, arrays...) )
 end
+function remove_values_and_linked_new(vals_to_remove, arr, arrays...)
+    S = Set(vals_to_remove)
+    mask = .!(in.(arr, Ref(S)))   # Boolean mask: true = keep
+    return (a[mask] for a in (arr, arrays...))
+end
 
 
 function report_stats(vals, pdf; label = "", print2screen = false, newline = false, unit = (1, ""), format_str = "%4.1f", n_peaks = 1, multip1_threshold=[15], multip_percentiles=0:5:100)
@@ -49,7 +54,7 @@ function report_stats(database, what, prg, ttp; filter = nothing, print2screen =
 end
 
 function report_stats_common(vals, pdfs, label; print2screen, newline, unit, format_str, n_peaks, multip1_threshold, multip_percentiles)
-    vals, pdfs = remove_values_and_linked([NaN, Inf, -Inf], vals, pdfs)
+    vals, pdfs = remove_values_and_linked_new([NaN, Inf, -Inf], vals, pdfs)
     pdfs = Weights(pdfs)
     val_min = minimum(vals) 
     val_max = maximum(vals)
@@ -64,7 +69,7 @@ function report_stats_common(vals, pdfs, label; print2screen, newline, unit, for
 
     print2screen && Printf.format(stdout, fmt, label, val_min/unit[1], avg/unit[1],  (q_95-avg)/unit[1], (avg-q_05)/unit[1], val_max/unit[1], unit[2], (newline ? "\n" : "") )
     
-    @printf("\nPerc. Analysis\n")
+    print2screen && @printf("\nPerc. Analysis\n")
     n=0
     if print2screen 
 
@@ -72,26 +77,27 @@ function report_stats_common(vals, pdfs, label; print2screen, newline, unit, for
             n_digs = format_str[2] 
             fmt_string = @sprintf("%s%s%s ", "%", n_digs, "s")
             fmt = Printf.Format(fmt_string)
-            Printf.format(stdout, fmt, qt)
+            print2screen &&  Printf.format(stdout, fmt, qt)
             n+= 1
             (n%15 == 0) && @printf("\n")
         end
-        @printf("\n")
+        print2screen && @printf("\n")
 
         n=0
         for qt in multip_percentiles
             fmt = Printf.Format(format_str*" ")
-            Printf.format(stdout, fmt, quantile(vals,pdfs,qt/100)/unit[1])
+            print2screen &&  Printf.format(stdout, fmt, quantile(vals,pdfs,qt/100)/unit[1])
             n+= 1
             (n%15 == 0) && @printf("\n")
         end
-        @printf("\n\n")
+        print2screen && @printf("\n")
+        @printf("\n")
     end 
 
     
     if n_peaks > 1 
          
-        @printf("\n")
+        print2screen && @printf("\n")
         qtl_thresholds = copy(multip1_threshold)
         push!(qtl_thresholds, 100)
         print2screen  && @printf("Having chosen %s quantile as the threshold for the multipeak, here are the statistics\n", multip1_threshold)
@@ -232,9 +238,15 @@ function report_model(f, MODELS, logM, q, logP, columns)
             model["endvals"*which_SN].M_remnant_g, )
 end
 
+function print_history2(f, MODELS, logM, q, logP, columns)
+    model = MODELS[to_key(logM)*"_"*to_key(logP)*"_"*to_key(q)]
+    n = model["mod"]
+    print_history(f, n, columns, "2")
+end
+
 
 function report_model_detail(f_MW, MODELS, logM, q, logP, columns, which; details=false, resolve_phase = [10,10,10,10,10], return_arrays = false)
-    model = MODELS[to_key(logM)][to_key(logP)][to_key(q)]
+    model = MODELS[to_key(logM)*"_"*to_key(logP)*"_"*to_key(q)]
     n = model["mod"]
     if details
         @printf("Star 1 termination:     %s\n", model["end1"])
@@ -280,7 +292,7 @@ function report_model_detail(f_MW, MODELS, logM, q, logP, columns, which; detail
     
     age = hf.star_age 
     hf_end = length(age)    
-    ZAMS, TAMS, end_Hburn, ini_Heburn, end_Heburn, ini_Cburn, end_Cburn = evolutionary_checkpoints(hf, hf_end)
+    ZAMS, H_burn, TAMS, end_Hburn, ini_Heburn, He_burn, end_Heburn, ini_Cburn, end_Cburn = evolutionary_checkpoints(hf, hf_end)
 
     function substager(i,f,d)
         if f > 0
@@ -545,13 +557,11 @@ function seqdata_MODELS(what, names, MODELS; full_output=true, norm_pdf=1)
                 full_output && (push!(sub_sn1, (e == "1") ))
                 push!(sub_what, res)
             end
-            # throw(ErrorException)############WORK HERE#############################################
             if n_runs == 1
                     full_output && (sub_prg  = [sub_prg[1]  for _ in range(1,n_runs_total)])
                     full_output && (sub_pdf  = [sub_pdf[1]  for _ in range(1,n_runs_total)])
                     full_output && (sub_sn1  = [sub_sn1[1]  for _ in range(1,n_runs_total)])
                     for n in 2:n_runs_total 
-                        # throw(ErrorException)
                         res = get_data_from_model(model, e, n, what)
                         push!(sub_what, res)
                     end
@@ -607,6 +617,15 @@ function get_data_from_model(model, which, n_from_call, what::String)
         catch 
             print(keys(model))
         end
+    end
+
+    if what == "kick_angle"
+        # print(keys(model))
+        x, y, z = model["1st_kick_whole"][n]
+        r = sqrt(x^2+y^2+z^2)
+        φ = asin(z/r)
+        θ = atan(x/(r*cos(φ)), y/(r*cos(φ)))
+        return (θ/π,φ/π)
     end
 
     if what == "1stCO"

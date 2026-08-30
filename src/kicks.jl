@@ -398,9 +398,14 @@ function v_kicks_Valli25(stage)
     end
 end
 
+
+function v_kicks_MM20(parameter; v_ns=400) #parameter = (Mco-Mns)/Mn 
+    return rand(Normal(v_ns*parameter))
+end
+
 function get_kick_parameter(KICKS, endvals, case)
     if occursin("MM", KICKS)
-        return endvals.v_kick
+        return (endvals.M_co-endvals.M_remnant_b)/endvals.M_remnant_b 
     elseif occursin("Hobbs", KICKS) || occursin("DM25", KICKS)
         return nothing
     elseif occursin("COMBINE", KICKS) || occursin("Valli25", KICKS)
@@ -411,6 +416,8 @@ function get_kick_parameter(KICKS, endvals, case)
         throw(ErrorException("Unknown kick type: $KICKS"))
     end
 end
+
+
 
 function draw_φ(KICKS, parameter)
     sinφ = 0
@@ -428,7 +435,12 @@ end
 function get_kicks(KICKS, parameter, skip_n) #kicks to be given in kms
     num = nothing
     v_kick() = if occursin("MM_", KICKS) 
-                parameter
+                v_ns =  if occursin(" _v", KICKS)
+                            vk = parse(Int, match(r"_v(\d+)", KICKS).captures[1])
+                        else    
+                            vk = 400
+                        end
+                v_kicks_MM20(parameter; v_ns=vk)
               elseif occursin("Hobbs_", KICKS)
                 v_kicks_Hobbs()
               elseif occursin("COMBINE_", KICKS)
