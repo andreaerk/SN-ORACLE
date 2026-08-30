@@ -1,6 +1,6 @@
 using Pkg
 
-# Activate SNORACLE's environment
+# Activate POPSYNTH's environment
 Pkg.activate(@__DIR__)
 Pkg.resolve()
 
@@ -10,7 +10,7 @@ deps = [
     "CSV", "DataFrames", "DataStructures", "Debugger",
     "Meshes", "Interpolations", "QuadGK",
     "StatsBase", "NearestNeighbors", "HDF5",
-     "Dierckx", "Distributions",
+    "Dierckx", "Distributions",
 
     # StdLib packages (need to be in deps explicitly)
     "Printf", "LinearAlgebra", "Statistics"

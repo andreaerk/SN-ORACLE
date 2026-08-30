@@ -1,7 +1,7 @@
-name = "SN_ORACLE"
+name = "POPSYNTH"
 uuid = "c0f4a128-7e91-482c-845a-e67a97249ba2"
 authors = ["Andrea Ercolino <andreaerk1997@gmail.com>"]
-version = "0.2.2"
+version = "0.2.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
