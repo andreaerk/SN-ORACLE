@@ -1,6 +1,6 @@
 using Pkg
 
-# Activate POPSYNTH's environment
+# Activate SN_ORACLE's environment
 Pkg.activate(@__DIR__)
 Pkg.resolve()
 
