@@ -23,5 +23,5 @@ Simulations and the following data analysis may deal with even GBs worth of data
 ## Installation 
 - Clone the repository
 - julia install_SN_ORACLE.jl 
-then, use runner.ipynb for examples to use the code.
+- use runner.ipynb for examples to use the code.
 
