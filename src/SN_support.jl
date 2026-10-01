@@ -333,8 +333,6 @@ fexp_single(M16_param) = CSV.read(CC_dir * "single_star/EXP_PROP_"* M16_param*".
             DataFrame, delim=' ',ignorerepeated=true, silencewarnings=true)
 fexp_HeS(M16_param)    = CSV.read(CC_dir*"HeS/EXP_PROP_"* M16_param*".data",  
           DataFrame, delim=' ',ignorerepeated=true, silencewarnings=true)
-fexp_DRAD    = CSV.read(data_dir*"DRAD/EXP_PROP_AD23.data",  
-          DataFrame, delim=' ',ignorerepeated=true, silencewarnings=true)
 
 function corr_file_reducer_CC(corr_file, exp_file; mass_column = "logM")
     corr_file_exp = copy(corr_file)

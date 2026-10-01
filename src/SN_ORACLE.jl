@@ -15,10 +15,10 @@ module SN_ORACLE
     using Distributions 
 
     script_dir = dirname(@__FILE__)
-    const workdir = script_dir * "/../../../"
-    const out_dir = workdir * "output/"
+    const workdir = script_dir * "/../../"
+    #const out_dir = workdir * "output/"
     const data_dir = workdir * "Data/" 
-    const pythondir = workdir * "PythonScripts/"
+    #const pythondir = workdir * "PythonScripts/"
     const SG_dir = data_dir * "Models_SG/"
     const BG_dir = data_dir * "Models_BG/"
     const CC_dir = data_dir * "Models_CC/"
