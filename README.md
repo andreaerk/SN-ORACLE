@@ -1,6 +1,6 @@
 # SN-ORACLE
 
-### *S*uper*N*ova *O*utcome *R*ates *A*cross *C*omprehensive *L*arge-scale single and binary stellar *E*volution models,
+### **S**uper**N**ova **O**utcome **R**ates **A**cross **C**omprehensive **L**arge-scale single and binary stellar **E**volution models,
 
 This population synthesis code is a post-processing tool that analyzes a large-scale input grid of detailed single and binary stellar evolution models to predict numbers and features of supernovae.
 
@@ -16,13 +16,13 @@ This is the first step to use the observed sample of supernovae to learn somethi
 
 ## Requirements
 
-This code requires Julia (1.13.1) and a functioning computer. Nothing else. 
+This code requires **Julia** (1.13.1).
 
 ### Data 
 
 This code requires data from stellar/binary evolution models, typically produced with codes like MESA. 
 The current version of this code relies on input data from Jin et al. ([2024](https://ui.adsabs.harvard.edu/abs/2024A%26A...690A.135J/abstract), [2026](https://ui.adsabs.harvard.edu/abs/2026A%26A...707A..56J/abstract)) and Ercolino et al. ([2026a](https://ui.adsabs.harvard.edu/abs/2026A%26A...706A.169E/abstract)). Their data is, for now, partially hardcoded within the code. Future releases of SN-ORACLE will aim to make the code flexible and operational with user input using different grids. 
-Feel free to contact me if you want to use your single and binary evolution grids, and I'll see if it can be done with little effort! 
+Feel free to contact me if you want to use your single and binary evolution grids, and I'll see if it can be done! 
 
 ### System requirements
 
