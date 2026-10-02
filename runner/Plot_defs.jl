@@ -432,4 +432,286 @@ function move_axislabel!(axis; which = :x, align = 1.0)
 end
 
 
-print("done!\n")
+function run_histogram(ax, data_raw, pdf_data, bins, width; color=:gray, colorcont=:black, datascale = identity, keep_log = false, direction = :y, to_plot = true, strokewidth=1, norm = true, bar_or_step = :bar, strokestyle=:solid, shift=0)
+    (length(data_raw) != length(pdf_data)) && throw(ErrorException("Data and pdf are not the same size"))
+
+    reverse_f(x) =  (datascale == log10 && !keep_log ) ? 10. .^(x) : identity(x)
+    x_bar = [ reverse_f(bins[ix]+width/2)  for ix in range(1,length(bins)-1)]  
+    if length(data_raw) == 0
+        @printf("Warning! No data to plot histogram!\n")
+        return x_bar, 0 .* collect(bins[1:end-1])
+    end
+
+    data = nothing 
+    normalize = typeof(norm) == Bool ? (norm ? sum(pdf_data) : 1) : (typeof(norm) ==  Float64 ? norm : 1)
+    data = datascale.(data_raw)
+    dataweights = weights(pdf_data / normalize)
+    # (norm == :max) && (dataweights = dataweights./maximum(dataweights))
+    hist1 = fit(Histogram,  data, dataweights, bins)  
+    # (norm == :max) && (hist1.weights = hist1.weights./maximum(hist1.weights))
+    y_bar = Float64[]
+    for ix in range(1,length(bins)-1)
+        if norm == :max
+            normalize = maximum(hist1.weights)
+            push!(y_bar,  hist1.weights[ix]/normalize) 
+        else
+            push!(y_bar,  hist1.weights[ix]) 
+        end
+    end 
+    edges  = hist1.edges[1]
+    counts = hist1.weights ./ (norm==:max ? maximum(hist1.weights) : 1) .+ shift
+
+    # @printf("norm = %s, max ybar = %5.3f", norm, maximum(y_bar))
+    if to_plot 
+         bar_or_step == :bar && barplot!(ax, x_bar , 
+                 y_bar, 
+                 color =   color,
+                 strokewidth =  strokewidth,
+                 strokecolor = colorcont,
+                 width= (datascale == log10) ? [ reverse_f(bins[ix]+width/2) - reverse_f(bins[ix]-width/2)  for ix in range(1,length(bins)-1)]     : width*1.1,
+                 direction = direction)
+        bar_or_step == :step && stephist!(ax, 
+                 data, weights =  dataweights,
+                 linestyle=strokestyle,
+                 linewidth=strokewidth,
+                 color =   color, bins=x_bar, scale_to=shift)
+        bar_or_step == :hist && hist!(ax, 
+                 data, weights =  dataweights,
+                 color =   color, bins=x_bar)
+        bar_or_step == :stairs &&  stairs!(ax,
+                edges,
+                [counts; counts[end]],
+                step = :post,
+                linewidth = strokewidth,
+                linestyle = strokestyle,
+                color = color)
+
+    end
+    return x_bar, y_bar
+
+end 
+
+
+
+function run_histogram(ax, prg, ttp, what, bins, width; color=:gray, colorcont=:black, datascale = identity, keep_log = false, direction = :y, strokewidth=1)
+    length(get_idx(prg, ttp)) == 0 && return 0
+
+    pdf = sum(  sum([sum(SN_DATA["pdf"][prg][get_idx(prg, type)]) for type in sntypes]) for prg in ["1", "2", "M", "S"] )
+    pdf = sum(SN_DATA["pdf"][prg][get_idx(prg, ttp)])
+    special_what = ["f_M", "E_int"]
+    data = nothing 
+    if ! (what in special_what )
+        data = datascale.(SN_DATA[what][prg][get_idx(prg,ttp)])
+    elseif what in special_what || occursin("f_M", what)
+        theta = (length(what) > 3 && what[1:3] == "f_M") ?  what[4:end] : 90  
+        sintheta = sin(theta/360*2*pi)
+        f_m = sintheta .* SN_DATA["dM_C"][prg][get_idx(prg,ttp)] ./(SN_DATA["Mej"][prg][get_idx(prg,ttp)].*sintheta .+ SN_DATA["dM_C"][prg][get_idx(prg,ttp)])
+        if what == "E_int"
+            data =  datascale.(SN_DATA["E_exp"][prg][get_idx(prg,ttp)]   .*   f_m)
+        else 
+            data = datascale.(f_m)
+        end 
+    else 
+        throw(ErrorException("Incorrect 'what' argument in run_histogram"))
+    end 
+
+    dataweights = weights(SN_DATA["pdf"][prg][get_idx(prg,ttp)]/pdf)
+
+    reverse_f(x) =  (datascale == log10 && ! keep_log) ? 10. .^(x) : identity(x)
+    x_bar = [ reverse_f(bins[ix]+width/2)  for ix in range(1,length(bins)-1)]  
+    hist1 = fit(Histogram,  data, dataweights, bins)  
+
+    y_bar = Float64[]
+
+    for ix in range(1,length(bins)-1)
+        push!(y_bar,  hist1.weights[ix]) 
+    end 
+
+    barplot!(ax, x_bar , 
+                 y_bar, 
+                 color =   color,
+                 strokewidth =  strokewidth,
+                 strokecolor = colorcont,
+                 width= (datascale == log10) ? [ reverse_f(bins[ix]+width/2) - reverse_f(bins[ix]-width/2)  for ix in range(1,length(bins)-1)]     : width*1.1,
+                 direction = direction)
+end 
+
+function run_histogram_filtered(ax, prg, ttp, what, bins, width; filter = true, color=:gray, colorcont=:black, datascale = identity, keep_log = false, direction = :y, to_plot = true, strokewidth=1)
+    length(get_idx(prg, ttp)) == 0 && return 0
+    @printf("Tot of elements %d - filter lenght %d \n", length(get_idx(prg, ttp)), length(filter))
+
+    pdf = sum(SN_DATA["pdf"][prg][get_idx(prg, ttp)])
+
+    extrafilter = [] 
+    if length(filter) > 1
+        for ix in range(1,length(get_idx(prg, ttp)))
+            filter[ix] && push!(extrafilter, get_idx(prg, ttp)[ix])
+        end
+    else
+        extrafilter = get_idx(prg, ttp)
+    end
+    @printf("extrafilter got %d elements.\n", length(extrafilter))
+    # (length(extrafilter) != length(get_idx(prg, ttp))) && throw(ErrorException("Filter and Data have different sizes!"))
+    
+    special_what = ["f_M", "E_int"]
+    data = nothing 
+    if ! (what in special_what || occursin("f_M", what) )
+        data = datascale.(SN_DATA[what][prg][extrafilter])
+    elseif what in special_what || occursin("f_M", what)
+        theta = (length(what) > 3 && what[1:3] == "f_M") ?  parse(Float64, what[4:end]) : 90  
+        sintheta = sin(theta/360*2*pi)
+        f_m = sintheta .* SN_DATA["dM_C"][prg][extrafilter] ./(SN_DATA["Mej"][prg][extrafilter].*sintheta .+ SN_DATA["dM_C"][prg][extrafilter])
+        if what == "E_int"
+            data =  datascale.(SN_DATA["E_exp"][prg][extrafilter]   .*   f_m)
+        else 
+            data = datascale.(f_m)
+        end 
+    else 
+        throw(ErrorException("Incorrect 'what' argument in run_histogram"))
+    end 
+
+    dataweights = weights(SN_DATA["pdf"][prg][extrafilter]/pdf)
+ 
+    reverse_f(x) = ( datascale == log10 && ! keep_log) ? 10. .^(x) : identity(x)
+    x_bar = [ reverse_f(bins[ix]+width/2)  for ix in range(1,length(bins)-1)]  
+    hist1 = fit(Histogram,  data, dataweights, bins)  
+
+    y_bar = Float64[]
+
+    for ix in range(1,length(bins)-1)
+        push!(y_bar,  hist1.weights[ix]) 
+    end 
+
+     to_plot && barplot!(ax, x_bar , 
+                 y_bar, 
+                 color =   color,
+                 strokewidth =  strokewidth,
+                 strokecolor = colorcont,
+                 width= (datascale == log10) ? [ reverse_f(bins[ix]+width/2) - reverse_f(bins[ix]-width/2)  for ix in range(1,length(bins)-1)]     : width*1.1,
+                 direction = direction)
+
+    return x_bar, y_bar
+end 
+
+function run_histogram(ax, data_raw, pdf_data, bins, width; color=:gray, colorcont=:black, datascale = identity, keep_log = false, direction = :y, to_plot = true, strokewidth=1, norm = true)
+    (length(data_raw) == 0)           && return 0
+    (length(data_raw) != length(pdf_data)) && throw(ErrorException("Data and pdf are not the same size"))
+
+    data = nothing 
+    normalize = typeof(norm) == Bool ? (norm ? sum(pdf_data) : 1) : norm 
+    data = datascale.(data_raw)
+    dataweights = weights(pdf_data / normalize)
+
+    reverse_f(x) =  (datascale == log10 && !keep_log ) ? 10. .^(x) : identity(x)
+    x_bar = [ reverse_f(bins[ix]+width/2)  for ix in range(1,length(bins)-1)]  
+    hist1 = fit(Histogram,  data, dataweights, bins)  
+
+    y_bar = Float64[]
+
+    for ix in range(1,length(bins)-1)
+        push!(y_bar,  hist1.weights[ix]) 
+    end 
+
+    to_plot && barplot!(ax, x_bar , 
+                 y_bar, 
+                 color =   color,
+                 strokewidth =  strokewidth,
+                 strokecolor = colorcont,
+                 width= (datascale == log10) ? [ reverse_f(bins[ix]+width/2) - reverse_f(bins[ix]-width/2)  for ix in range(1,length(bins)-1)]     : width*1.1,
+                 direction = direction)
+    return x_bar, y_bar
+
+end 
+
+
+function sn_heatmap(ax, database, prg, sn, what_x, what_y,  filter, xbins, ybins; colorrange=[0,nothing],
+                    cmap=cmap, unit_x = 1, unit_y=1, scale_x = identity, scale_y = identity, print_data=false,
+                    highclip=nothing, lowclip=nothing)
+    xs  = scale_x.( get_data_sne(database, prg, sn, what_x; filter=filter) ./ unit_x )
+    ys  = scale_y.( get_data_sne(database, prg, sn, what_y; filter=filter) ./ unit_y )
+    pdfs=           get_data_sne(database, prg, sn, "pdf";             filter=filter) .* 100
+
+    return sn_heatmap(ax, xs, ys, pdfs, xbins, ybins;
+                    cmap=cmap, print_data=false, colorrange=colorrange, highclip=highclip, lowclip=lowclip)
+end
+
+
+
+function sn_heatmap(ax, xs, ys, pdfs, xbins, ybins; colorrange=[0,nothing],
+                    cmap=cmap,  print_data=false, highclip=nothing, lowclip=nothing)
+
+    h = fit(Histogram, (xs, ys), Weights(pdfs), (xbins, ybins))
+
+    print_data && @printf("Weights: min=%.3e, ", minimum(h.weights[h.weights .> 0]))
+    print_data && @printf("max=%.3e, ", maximum(h.weights[h.weights .> 0]))
+    print_data && @printf("min/max=%.3e\n", minimum(h.weights[h.weights .> 0])./maximum(h.weights[h.weights .> 0]))
+
+    xc = (h.edges[1][1:end-1] .+ h.edges[1][2:end]) ./ 2
+    yc = (h.edges[2][1:end-1] .+ h.edges[2][2:end]) ./ 2
+    hm = heatmap!(ax, xc, yc, h.weights; colormap=cmap, colorrange=colorrange, highclip=highclip, lowclip=lowclip)
+    return hm
+end
+
+
+
+function run_histogram(ax, data_raw, pdf_data, bins, width; color=:gray, colorcont=:black, datascale = identity, keep_log = false, direction = :y, to_plot = true, strokewidth=1, norm = true, bar_or_step = :bar, strokestyle=:solid, shift=0)
+    (length(data_raw) != length(pdf_data)) && throw(ErrorException("Data and pdf are not the same size"))
+
+    reverse_f(x) =  (datascale == log10 && !keep_log ) ? 10. .^(x) : identity(x)
+    x_bar = [ reverse_f(bins[ix]+width/2)  for ix in range(1,length(bins)-1)]  
+    if length(data_raw) == 0
+        @printf("Warning! No data to plot histogram!\n")
+        return x_bar, 0 .* collect(bins[1:end-1])
+    end
+
+    data = nothing 
+    normalize = typeof(norm) == Bool ? (norm ? sum(pdf_data) : 1) : (typeof(norm) ==  Float64 ? norm : 1)
+    data = datascale.(data_raw)
+    dataweights = weights(pdf_data / normalize)
+    # (norm == :max) && (dataweights = dataweights./maximum(dataweights))
+    hist1 = fit(Histogram,  data, dataweights, bins)  
+    # (norm == :max) && (hist1.weights = hist1.weights./maximum(hist1.weights))
+    y_bar = Float64[]
+    for ix in range(1,length(bins)-1)
+        if norm == :max
+            normalize = maximum(hist1.weights)
+            push!(y_bar,  hist1.weights[ix]/normalize) 
+        else
+            push!(y_bar,  hist1.weights[ix]) 
+        end
+    end 
+    edges  = hist1.edges[1]
+    counts = hist1.weights ./ (norm==:max ? maximum(hist1.weights) : 1) .+ shift
+
+    # @printf("norm = %s, max ybar = %5.3f", norm, maximum(y_bar))
+    if to_plot 
+         bar_or_step == :bar && barplot!(ax, x_bar , 
+                 y_bar, 
+                 color =   color,
+                 strokewidth =  strokewidth,
+                 strokecolor = colorcont,
+                 width= (datascale == log10) ? [ reverse_f(bins[ix]+width/2) - reverse_f(bins[ix]-width/2)  for ix in range(1,length(bins)-1)]     : width*1.1,
+                 direction = direction)
+        bar_or_step == :step && stephist!(ax, 
+                 data, weights =  dataweights,
+                 linestyle=strokestyle,
+                 linewidth=strokewidth,
+                 color =   color, bins=x_bar, scale_to=shift)
+        bar_or_step == :hist && hist!(ax, 
+                 data, weights =  dataweights,
+                 color =   color, bins=x_bar)
+        bar_or_step == :stairs &&  stairs!(ax,
+                edges,
+                [counts; counts[end]],
+                step = :post,
+                linewidth = strokewidth,
+                linestyle = strokestyle,
+                color = color)
+
+    end
+    return x_bar, y_bar
+
+end 
+
+@printf("done!\n")
+
