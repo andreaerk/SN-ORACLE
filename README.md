@@ -40,3 +40,8 @@ Alternatively, you can write your own Julia/Python project using this code.
 - Within Julia, make sure you include `using SN_ORACLE`. From there, see the usage in `runner.ipynb` to see what functions to call and what they do.
 - With Python, install the `PyJulia` package, and then you're on your own (happy to see how it turns out so that I may add instructions here too!)
 
+## License
+
+This software code is licensed under the GNU Lesser General Public License v3.0 
+(LGPL-3.0). See the [LICENSE](LICENSE) and [LICENSE.LESSER](LICENSE.LESSER) 
+files for full legal details.
