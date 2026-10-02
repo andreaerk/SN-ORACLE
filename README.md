@@ -34,5 +34,8 @@ Simulations and the following data analysis may deal with even GBs worth of data
 - `cd user/SN-ORACLE/` and then `julia install_SN_ORACLE.jl`: this will install all necessary packages and dependencies and pre-compile SN-ORACLE for use. It may take ~10 minutes.
 
 ## Use 
-Open runner.ipynb with your favorite editor like VSCode. There, you will find a click-and-play example for running SN-ORACLE, reproducing the Fiducial Model in Ercolino et al. (2026a). A user's guide will be written in the future.
+Open `runner.ipynb` with your favorite editor like VSCode. There, you will find a click-and-play example for running SN-ORACLE, reproducing the Fiducial Model in Ercolino et al. (2026a). A user's guide will be written in the future. 
+Alternatively, you can write your own Julia/Python project using this code. 
+- Within Julia, make sure you include `using SN_ORACLE`
+- With Python, install the `PyJulia` package, and then you're on your own (happy to see how it turns out so that I may add instructions here too!)
 
