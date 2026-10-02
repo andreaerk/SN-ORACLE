@@ -1,7 +1,7 @@
 
 
 print("Reading & cleaning single-star CORR files...")
-f_single = CSV.read(BG_dir*"CORR_GRID_single_150.dat", 
+f_single = CSV.read(SG_dir*"CORR_GRID_single_150.dat", 
                      header=1, DataFrame,delim=' ',ignorerepeated=true)
 deleteat!(f_single, findall( !>(0) , f_single.M_he_core_end_BURN_He) )
 
@@ -1788,4 +1788,3 @@ function print_history(f, model, what)
     end 
 
 end
-
