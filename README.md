@@ -16,14 +16,13 @@ This is the first step to use the observed sample of supernovae to learn somethi
 
 ## Requirements
 
+This code requires Julia to run, and we suggest Jupyter Notebooks for running the simulations and analyzing the data.
+
 ### Data 
 
 This code requires data from stellar/binary evolution models, typically produced with codes like MESA. 
-Here, input data is already provided from Jin et al. (2024, 2026) and Ercolino et al. (2026). 
-
-### Execution 
-
-This code requires Julia to run, and we suggest Jupyter for running the simulations and analyzing the data. 
+The current version of this code relies on input data from Jin et al. ([2024](https://ui.adsabs.harvard.edu/abs/2024A%26A...690A.135J/abstract), [2026](https://ui.adsabs.harvard.edu/abs/2026A%26A...707A..56J/abstract)) and Ercolino et al. ([2026a](https://ui.adsabs.harvard.edu/abs/2026A%26A...706A.169E/abstract)). Their data is, for now, partially hardcoded within the code. Future releases of SN-ORACLE will aim to make the code flexible and operational with user input using different grids. 
+Feel free to contact me if you want to use your single and binary evolution grids, and I'll see if it can be done with little effort! 
 
 ### System requirements
 
