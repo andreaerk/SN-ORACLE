@@ -31,7 +31,7 @@ Simulations and the following data analysis may deal with even GBs worth of data
 ## Installation 
 - Clone/Download the repository to your working folder, say `user/SN-ORACLE/`.
 - Download the data folder from Zenodo. You must have a directory `user/SN-ORACLE/Data/` in order for the code to run.
-- `julia install_SN_ORACLE.jl`: this will install all necessary packages and dependencies and pre-compile SN-ORACLE for use. It may take ~10 minutes.
+- `cd user/SN-ORACLE/` and then `julia install_SN_ORACLE.jl`: this will install all necessary packages and dependencies and pre-compile SN-ORACLE for use. It may take ~10 minutes.
 
 ## Use 
 Open runner.ipynb with your favorite editor like VSCode. There, you will find a click-and-play example for running SN-ORACLE, reproducing the Fiducial Model in Ercolino et al. (2026a). A user's guide will be written in the future.
