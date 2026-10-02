@@ -16,7 +16,7 @@ This is the first step to use the observed sample of supernovae to learn somethi
 
 ## Requirements
 
-This code requires Julia to run, and we suggest Jupyter Notebooks for running the simulations and analyzing the data.
+This code requires Julia (1.13.1) and a functioning computer. Nothing else. 
 
 ### Data 
 
